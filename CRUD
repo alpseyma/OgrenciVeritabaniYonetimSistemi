@@ -1,0 +1,101 @@
+Sorgular aşağıdaki gibi yer almaktadır:
+
+-- Veritabanı Şeması ve Tablolar
+
+CREATE TABLE IF NOT EXISTS Fakülteler (
+    FakulteID INT PRIMARY KEY,
+    FakulteAd VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Öğrenciler (
+    OgrenciNo INT PRIMARY KEY,
+    İsim VARCHAR(50) NOT NULL,
+    Soyisim VARCHAR(50) NOT NULL,
+    FakulteID INT,
+    FOREIGN KEY (FakulteID) REFERENCES Fakülteler(FakulteID)
+);
+
+CREATE TABLE IF NOT EXISTS Dersler (
+    DersKodu INT PRIMARY KEY,
+    Dersİsmi VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Notlar (
+    OgrenciNo INT,
+    DersKodu INT,
+    Vize INT,
+    Final INT,
+    PRIMARY KEY (OgrenciNo, DersKodu),
+    FOREIGN KEY (OgrenciNo) REFERENCES Öğrenciler(OgrenciNo) ON DELETE CASCADE,
+    FOREIGN KEY (DersKodu) REFERENCES Dersler(DersKodu)
+);
+
+-- Veri Eklemeleri
+
+INSERT INTO Fakülteler (FakulteID, FakulteAd) VALUES (1, 'İşletme');
+INSERT INTO Fakülteler (FakulteID, FakulteAd) VALUES (2, 'Hukuk');
+INSERT INTO Fakülteler (FakulteID, FakulteAd) VALUES (3, 'Tıp');
+
+INSERT INTO Öğrenciler (OgrenciNo, İsim, Soyisim, FakulteID) VALUES (201, 'Ece', 'Kaya', 1);
+INSERT INTO Öğrenciler (OgrenciNo, İsim, Soyisim, FakulteID) VALUES (202, 'Burak', 'Yıldız', 2);
+INSERT INTO Öğrenciler (OgrenciNo, İsim, Soyisim, FakulteID) VALUES (203, 'Zeynep', 'Demir', 3);
+
+INSERT INTO Dersler (DersKodu, Dersİsmi) VALUES (101, 'Mikro İktisat');
+INSERT INTO Dersler (DersKodu, Dersİsmi) VALUES (102, 'Anayasa Hukuku');
+INSERT INTO Dersler (DersKodu, Dersİsmi) VALUES (103, 'Anatomi');
+
+INSERT INTO Notlar (OgrenciNo, DersKodu, Vize, Final) VALUES (201, 101, 85, 90);
+INSERT INTO Notlar (OgrenciNo, DersKodu, Vize, Final) VALUES (202, 102, 75, 80);
+INSERT INTO Notlar (OgrenciNo, DersKodu, Vize, Final) VALUES (203, 103, 65, 70);
+
+-- Örnek Sorgular
+
+-- Tüm Öğrencilerin İsim, Soyisim ve Fakülte Adını Listeleme
+SELECT Öğrenciler.İsim, Öğrenciler.Soyisim, Fakülteler.FakulteAd
+FROM Öğrenciler
+JOIN Fakülteler ON Öğrenciler.FakulteID = Fakülteler.FakulteID;
+
+-- Belirli Bir Ders Koduna Sahip Öğrencileri Listeleme
+SELECT Öğrenciler.İsim, Öğrenciler.Soyisim, Dersler.Dersİsmi
+FROM Notlar
+JOIN Öğrenciler ON Notlar.OgrenciNo = Öğrenciler.OgrenciNo
+JOIN Dersler ON Notlar.DersKodu = Dersler.DersKodu
+WHERE Dersler.DersKodu = 101;
+
+-- Öğrencilerin Ortalama Notlarını Hesaplama
+SELECT Öğrenciler.İsim, Öğrenciler.Soyisim,
+       AVG((Notlar.Vize * 0.4) + (Notlar.Final * 0.6)) AS OrtalamaNot
+FROM Notlar
+JOIN Öğrenciler ON Notlar.OgrenciNo = Öğrenciler.OgrenciNo
+GROUP BY Öğrenciler.İsim, Öğrenciler.Soyisim;
+
+-- En Yüksek Final Notuna Sahip Öğrenciyi Bulma
+SELECT Öğrenciler.İsim, Öğrenciler.Soyisim, Notlar.Final
+FROM Notlar
+JOIN Öğrenciler ON Notlar.OgrenciNo = Öğrenciler.OgrenciNo
+ORDER BY Notlar.Final DESC
+LIMIT 1;
+
+-- Belirli Bir Öğrencinin Aldığı Tüm Dersleri ve Notları Listeleme
+SELECT Dersler.Dersİsmi, Notlar.Vize, Notlar.Final
+FROM Notlar
+JOIN Dersler ON Notlar.DersKodu = Dersler.DersKodu
+WHERE Notlar.OgrenciNo = 201;
+
+-- Bir Fakültedeki Tüm Öğrencilerin Ortalama Notlarını Hesaplama
+SELECT Fakülteler.FakulteAd, Öğrenciler.İsim, Öğrenciler.Soyisim,
+       AVG((Notlar.Vize * 0.4) + (Notlar.Final * 0.6)) AS OrtalamaNot
+FROM Notlar
+JOIN Öğrenciler ON Notlar.OgrenciNo = Öğrenciler.OgrenciNo
+JOIN Fakülteler ON Öğrenciler.FakulteID = Fakülteler.FakulteID
+WHERE Fakülteler.FakulteID = 1
+GROUP BY Fakülteler.FakulteAd, Öğrenciler.İsim, Öğrenciler.Soyisim;
+
+-- Öğrenci Bilgilerini Güncelleme
+UPDATE Öğrenciler
+SET Soyisim = 'Yılmaz'
+WHERE OgrenciNo = 201;
+
+-- Öğrenci Kayıtlarını Silme
+DELETE FROM Öğrenciler
+WHERE OgrenciNo = 202;
